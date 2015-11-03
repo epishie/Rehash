@@ -16,17 +16,22 @@
 
 package com.epishie.rehash.view.adapter;
 
+import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.text.Html;
+import android.text.format.DateUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.epishie.rehash.R;
 import com.epishie.rehash.model.Comment;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import butterknife.Bind;
@@ -51,7 +56,25 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.ViewHo
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         Comment comment = mComments.get(position);
+
+        // By line
+        Date now = new Date();
+        CharSequence age = DateUtils.getRelativeTimeSpanString(comment.getTime().getTime(),
+                now.getTime(),
+                DateUtils.MINUTE_IN_MILLIS);
+        Context context = holder.itemView.getContext();
+        String byLine = context.getString(R.string.lbl_comment_by_line,
+                comment.getAuthor(),
+                age);
+        holder.mCommentByLineText.setText(byLine);
+
+        // Content
         holder.mCommentText.setText(Html.fromHtml(comment.getText()));
+        if (comment.getLevel() == 0) {
+            holder.mMarkerImage.setVisibility(View.GONE);
+        } else {
+            holder.mMarkerImage.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -66,8 +89,12 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.ViewHo
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
+        @Bind(R.id.comment_by_line)
+        protected TextView mCommentByLineText;
         @Bind(R.id.comment_text)
         protected TextView mCommentText;
+        @Bind(R.id.marker)
+        protected View mMarkerImage;
 
         public ViewHolder(View itemView) {
             super(itemView);

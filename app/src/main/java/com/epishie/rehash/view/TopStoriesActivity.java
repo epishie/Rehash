@@ -19,6 +19,8 @@ package com.epishie.rehash.view;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -31,9 +33,11 @@ import com.epishie.rehash.di.AppComponent;
 import com.epishie.rehash.di.HasComponent;
 import com.epishie.rehash.model.StoryBundle;
 import com.epishie.rehash.view.adapter.TopStoriesAdapter;
+import com.epishie.rehash.view.widget.DividerItemDecoration;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -47,6 +51,8 @@ import static butterknife.ButterKnife.bind;
 
 public class TopStoriesActivity extends AppCompatActivity {
 
+    private static final String TAG_RETAIN = "retain";
+
     @Named("data")
     @Inject
     protected RxEventBus mDataBus;
@@ -56,12 +62,25 @@ public class TopStoriesActivity extends AppCompatActivity {
     protected RecyclerView mList;
     @Bind(R.id.refresher)
     protected SwipeRefreshLayout mRefresher;
-    protected TopStoriesAdapter mAdapter;
-    protected List<Subscription> mSubscriptions;
+    private TopStoriesAdapter mAdapter;
+    private List<Subscription> mSubscriptions;
+    private RetainFragment mRetainFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // SETUP RETENTION
+        boolean relaunched = true;
+        FragmentManager fm = getSupportFragmentManager();
+        mRetainFragment = (RetainFragment) fm.findFragmentByTag(TAG_RETAIN);
+        if (mRetainFragment == null) {
+            relaunched = false;
+            mRetainFragment = new RetainFragment();
+            fm.beginTransaction()
+                    .add(mRetainFragment, TAG_RETAIN)
+                    .commit();
+        }
 
         // SETUP DI
         @SuppressWarnings("unchecked")
@@ -71,18 +90,24 @@ public class TopStoriesActivity extends AppCompatActivity {
         setupViews();
         setupBus();
 
-        /*mRefresher.post(new Runnable() {
-
-            @Override
-            public void run() {
-                mRefresher.setRefreshing(true);
-            }
-        });*/
-        mActionCreator.createGetStoriesAction(false);
+        if (!relaunched) {
+            mActionCreator.createGetStoriesAction(false);
+        }
+        if (!relaunched || mRetainFragment.mIsRefreshing.get()) {
+            mRefresher.post(new Runnable() {
+                @Override
+                public void run() {
+                    mRetainFragment.mIsRefreshing.set(true);
+                    mRefresher.setRefreshing(true);
+                }
+            });
+        }
     }
 
     @Override
     protected void onDestroy() {
+        mAdapter.setListener(null);
+        mRetainFragment.mAdapter = mAdapter;
         for (Subscription subscription : mSubscriptions) {
             subscription.unsubscribe();
         }
@@ -96,7 +121,10 @@ public class TopStoriesActivity extends AppCompatActivity {
         // SETUP RECYCLER VIEW
         LinearLayoutManager lm = new LinearLayoutManager(this);
         lm.setOrientation(LinearLayoutManager.VERTICAL);
-        mAdapter = new TopStoriesAdapter(mActionCreator);
+        mAdapter = mRetainFragment.mAdapter;
+        if (mAdapter == null) {
+            mAdapter = new TopStoriesAdapter();
+        }
         mList.setLayoutManager(lm);
         mList.setAdapter(mAdapter);
 
@@ -106,6 +134,8 @@ public class TopStoriesActivity extends AppCompatActivity {
             @Override
             public void onRequestMoreStories() {
                 mActionCreator.createGetStoriesAction(false);
+                mRetainFragment.mIsRefreshing.set(true);
+                mRefresher.setRefreshing(true);
             }
 
             @Override
@@ -129,6 +159,7 @@ public class TopStoriesActivity extends AppCompatActivity {
 
             @Override
             public void onRefresh() {
+                mRetainFragment.mIsRefreshing.set(true);
                 mActionCreator.createGetStoriesAction(true);
             }
         });
@@ -143,9 +174,22 @@ public class TopStoriesActivity extends AppCompatActivity {
                     @Override
                     public void call(StoryBundle stories) {
                         mAdapter.addStories(stories);
+                        mRetainFragment.mIsRefreshing.set(false);
                         mRefresher.setRefreshing(false);
                     }
                 });
         mSubscriptions.add(storySubscription);
+    }
+
+    public static class RetainFragment extends Fragment {
+
+        public AtomicBoolean mIsRefreshing = new AtomicBoolean(false);
+        public TopStoriesAdapter mAdapter;
+
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            setRetainInstance(true);
+        }
     }
 }

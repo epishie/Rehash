@@ -15,21 +15,41 @@
   ~ limitations under the License.
   -->
 
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingLeft="@dimen/keyline_1"
     android:paddingStart="@dimen/keyline_1"
-    android:paddingRight="@dimen/keyline_1"
     android:paddingEnd="@dimen/keyline_1"
-    android:paddingTop="8dp"
-    android:paddingBottom="8dp" >
-    <TextView
-        android:id="@+id/comment_text"
+    android:paddingRight="@dimen/keyline_1"
+    android:paddingLeft="@dimen/keyline_1">
+    <View
+        android:id="@+id/marker"
+        android:layout_width="@dimen/keyline_1"
+        android:layout_height="wrap_content"
+        android:visibility="gone"/>
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        tools:text="This is a sample comment"/>
-</LinearLayout>
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:layout_toRightOf="@id/marker"
+        android:layout_toEndOf="@id/marker"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/comment_by_line"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="?android:textColorSecondary"
+            tools:text="epishie"/>
+        <TextView
+            android:id="@+id/comment_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textColor="?android:textColorPrimary"
+            tools:text="This is a sample comment"/>
+    </LinearLayout>
+</RelativeLayout>

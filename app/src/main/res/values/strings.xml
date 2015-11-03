@@ -16,4 +16,10 @@
 
 <resources>
     <string name="app_name">Rehash for Hacker News</string>
+    <string name="lbl_by_line">%1$d points by %2$s %3$s</string>
+    <string name="lbl_comment_by_line">by %1$s %2$s</string>
+    <string name="lbl_loading">Loading</string>
+    <string name="lbl_more">More</string>
+
+    <string name="dsc_link">Story Link</string>
 </resources>

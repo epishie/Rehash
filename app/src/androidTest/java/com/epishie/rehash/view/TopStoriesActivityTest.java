@@ -59,6 +59,7 @@ import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static android.support.test.espresso.matcher.ViewMatchers.withContentDescription;
 import static android.support.test.espresso.matcher.ViewMatchers.withText;
 import static com.epishie.rehash.test.ViewMatchers.withId;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.junit.Assert.*;
 
@@ -108,6 +109,7 @@ public class TopStoriesActivityTest {
     public void showsStoriesFromDataBus() {
         // GIVEN
         mActivityTestRule.launchActivity(new Intent());
+        mActivityTestRule.getActivity().mRefresher.setRefreshing(false);
 
         // WHEN
         dataBusHasStories(mActivityTestRule.getActivity().mDataBus);
@@ -136,7 +138,7 @@ public class TopStoriesActivityTest {
         mActivityTestRule.getActivity().mDataBus.post(mStories);
 
         // THEN
-        onView(allOf(isDescendantOfA(withId("list")), withText(story.getAuthor())))
+        onView(allOf(isDescendantOfA(withId("list")), withText(containsString(story.getAuthor()))))
                 .check(matches(isDisplayed()));
     }
 
@@ -154,7 +156,7 @@ public class TopStoriesActivityTest {
         mActivityTestRule.getActivity().mDataBus.post(mStories);
 
         // THEN
-        onView(allOf(isDescendantOfA(withId("list")), withText(String.valueOf(story.getScore()))))
+        onView(allOf(isDescendantOfA(withId("list")), withText(containsString(String.valueOf(story.getScore())))))
                 .check(matches(isDisplayed()));
     }
 
@@ -179,7 +181,7 @@ public class TopStoriesActivityTest {
         CharSequence age = DateUtils.getRelativeTimeSpanString(calendar.getTime().getTime(),
                 now.getTime(),
                 DateUtils.MINUTE_IN_MILLIS);
-        onView(allOf(isDescendantOfA(withId("list")), withText(age.toString())))
+        onView(allOf(isDescendantOfA(withId("list")), withText(containsString(age.toString()))))
                 .check(matches(isDisplayed()));
     }
 
@@ -198,7 +200,7 @@ public class TopStoriesActivityTest {
         mActivityTestRule.getActivity().mDataBus.post(mStories);
 
         // WHEN
-        onView(withContentDescription("Open URL")).perform(click());
+        onView(withId("url")).perform(click());
 
         // THEN
         intended(allOf(hasData(Uri.parse(story.getUrl())),
@@ -240,6 +242,7 @@ public class TopStoriesActivityTest {
             Story story = new Story.Builder()
                     .setId(id)
                     .setTitle("Story #" + id)
+                    .setUrl("http://www.google.com")
                     .build();
             mStories.add(story);
         }

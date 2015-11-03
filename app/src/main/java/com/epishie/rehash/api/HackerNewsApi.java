@@ -40,5 +40,6 @@ public interface HackerNewsApi {
         public String text;
         public String by;
         public List<Integer> kids;
+        public long time;
     }
 }

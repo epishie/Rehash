@@ -16,14 +16,16 @@
 
 package com.epishie.rehash.view.adapter;
 
+import android.content.Context;
 import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
+import android.text.SpannableString;
 import android.text.format.DateUtils;
+import android.text.style.UnderlineSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -45,13 +47,11 @@ public class TopStoriesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     private static final int MORE_ITEM = 1;
 
     private final StoryBundle mStories;
-    private final ActionCreator mActionCreator;
-    private WeakReference<Listener> mListenerRef;
+    private Listener mListener;
 
-    public TopStoriesAdapter(ActionCreator actionCreator) {
+    public TopStoriesAdapter() {
         mStories = new StoryBundle();
-        mActionCreator = actionCreator;
-        mListenerRef = new WeakReference<>(null);
+        mListener = null;
     }
 
     @Override
@@ -73,15 +73,13 @@ public class TopStoriesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         if (getItemViewType(position) == MORE_ITEM) {
             final LoadMoreViewHolder viewHolder = (LoadMoreViewHolder) holder;
             viewHolder.mMoreButton.setVisibility(View.VISIBLE);
-            viewHolder.mProgress.setVisibility(View.GONE);
             viewHolder.mMoreButton.setOnClickListener(new View.OnClickListener() {
 
                 @Override
                 public void onClick(View view) {
-                    if (mListenerRef.get() != null) {
-                        mListenerRef.get().onRequestMoreStories();
+                    if (mListener != null) {
+                        mListener.onRequestMoreStories();
                         viewHolder.mMoreButton.setVisibility(View.GONE);
-                        viewHolder.mProgress.setVisibility(View.VISIBLE);
                     }
                 }
             });
@@ -90,31 +88,47 @@ public class TopStoriesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         }
 
         StoryViewHolder viewHolder = (StoryViewHolder) holder;
-
         final Story story = mStories.get(position);
+
+        // Title
         viewHolder.mTitleText.setText(story.getTitle());
-        viewHolder.mAuthorText.setText(story.getAuthor());
-        viewHolder.mScoreText.setText(String.valueOf(story.getScore()));
+
+        // By line
         Date now = new Date();
         CharSequence age = DateUtils.getRelativeTimeSpanString(story.getTime().getTime(),
                 now.getTime(),
                 DateUtils.MINUTE_IN_MILLIS);
-        viewHolder.mAgeText.setText(age);
-        viewHolder.mOpenButton.setOnClickListener(new View.OnClickListener() {
+        Context context = viewHolder.itemView.getContext();
+        String byLine = context.getString(R.string.lbl_by_line,
+                story.getScore(),
+                story.getAuthor(),
+                age);
+        viewHolder.mByLineText.setText(byLine);
 
-            @Override
-            public void onClick(View view) {
-                if (mListenerRef.get() != null) {
-                    mListenerRef.get().onOpenStoryLink(Uri.parse(story.getUrl()));
+        // Link
+        final Uri uri = Uri.parse(story.getUrl());
+        if (uri != null && !(uri.toString().isEmpty())) {
+            SpannableString hostString = new SpannableString(uri.getHost());
+            hostString.setSpan(new UnderlineSpan(), 0, uri.getHost().length(), 0);
+            viewHolder.mUrlText.setText(hostString);
+            viewHolder.mUrlText.setOnClickListener(new View.OnClickListener() {
+
+                @Override
+                public void onClick(View view) {
+                    if (mListener != null) {
+                        mListener.onOpenStoryLink(uri);
+                    }
                 }
-            }
-        });
-        viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+            });
+        }
+
+        // Item link
+        viewHolder.mCard.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View view) {
-                if (mListenerRef.get() != null) {
-                    mListenerRef.get().onSelectStory(story.getId());
+                if (mListener != null) {
+                    mListener.onSelectStory(story.getId());
                 }
             }
         });
@@ -142,21 +156,19 @@ public class TopStoriesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     }
 
     public void setListener(Listener listener) {
-        mListenerRef = new WeakReference<>(listener);
+        mListener = listener;
     }
 
     public static class StoryViewHolder extends RecyclerView.ViewHolder {
 
+        @Bind(R.id.card)
+        protected View mCard;
         @Bind(R.id.title)
         protected TextView mTitleText;
-        @Bind(R.id.author)
-        protected TextView mAuthorText;
-        @Bind(R.id.score)
-        protected TextView mScoreText;
-        @Bind(R.id.age)
-        protected TextView mAgeText;
-        @Bind(R.id.open)
-        protected ImageButton mOpenButton;
+        @Bind(R.id.by_line)
+        protected TextView mByLineText;
+        @Bind(R.id.url)
+        protected TextView mUrlText;
 
         public StoryViewHolder(View itemView) {
             super(itemView);
@@ -168,8 +180,6 @@ public class TopStoriesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
 
         @Bind(R.id.more)
         protected Button mMoreButton;
-        @Bind(R.id.progress)
-        protected ProgressBar mProgress;
 
         public LoadMoreViewHolder(View itemView) {
             super(itemView);

@@ -15,67 +15,49 @@
   ~ limitations under the License.
   -->
 
-<RelativeLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="88dp"
-    android:paddingLeft="@dimen/keyline_1"
-    android:paddingStart="@dimen/keyline_1"
-    android:paddingRight="@dimen/keyline_1"
-    android:paddingEnd="@dimen/keyline_1"
-    android:paddingTop="8dp"
-    android:paddingBottom="8dp"
-    android:background="?attr/selectableItemBackground">
-    <ImageButton
-        android:id="@+id/open"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true"
-        android:padding="8dp"
-        android:background="@android:color/transparent"
-        android:src="@drawable/ic_open_in_browser_black_24dp"
-        android:contentDescription="Open URL" />
-    <TextView
-        android:id="@+id/title"
+    android:layout_height="wrap_content">
+    <android.support.v7.widget.CardView
+        android:id="@+id/card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginRight="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_toLeftOf="@id/open"
-        android:layout_toStartOf="@id/open"
-        android:maxLines="2"
-        android:textSize="16sp"
-        tools:text="This is a fairly long title of the hacker news story" />
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginRight="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_alignParentBottom="true"
-        android:layout_toLeftOf="@id/open"
-        android:layout_toStartOf="@id/open"
-        android:orientation="horizontal">
-        <TextView
-            android:id="@+id/author"
-            android:layout_width="wrap_content"
+        android:foreground="?attr/selectableItemBackground"
+        android:clickable="true"
+        app:cardUseCompatPadding="true"
+        app:cardCornerRadius="2dp">
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            tools:text="Sampler"/>
-        <TextView
-            android:id="@+id/age"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="8dp"
-            android:layout_marginStart="8dp"
-            tools:text="5d"/>
-        <TextView
-            android:id="@+id/score"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="8dp"
-            android:layout_marginStart="8dp"
-            tools:text="50"/>
-    </LinearLayout>
-</RelativeLayout>
+            android:layout_margin="@dimen/keyline_1"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="3"
+                android:textSize="24sp"
+                android:textColor="?android:textColorPrimary"
+                tools:text="This is a fairly long title of the hacker news story" />
+            <TextView
+                android:id="@+id/url"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="?android:textColorSecondary"
+                android:clickable="true"
+                tools:text="host.only.com" />
+            <TextView
+                android:id="@+id/by_line"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="?android:textColorSecondary"
+                tools:text="10 points by epishie 5 hours ago" />
+        </LinearLayout>
+    </android.support.v7.widget.CardView>
+</FrameLayout>
+

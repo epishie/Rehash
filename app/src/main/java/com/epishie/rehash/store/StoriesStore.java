@@ -24,6 +24,7 @@ import com.epishie.rehash.model.Comment;
 import com.epishie.rehash.model.Story;
 import com.epishie.rehash.model.StoryBundle;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -36,7 +37,6 @@ public class StoriesStore {
 
     private static final int PAGE_SIZE = 15;
     private static final int COMMENT_SIZE = 10;
-    private static final int REPLY_SIZE = 1;
 
     private final RxEventBus mActionBus;
     private final RxEventBus mDataBus;
@@ -130,7 +130,8 @@ public class StoriesStore {
                     public HackerNewsApi.Comment call(Integer integer) {
                         return mApi.getComment(integer);
                     }
-                }).limit(COMMENT_SIZE).map(new CommentMapper()).toBlocking().forEach(new Action1<Comment>() {
+                }).limit(COMMENT_SIZE).concatMap(new CommentMapper()).toBlocking().forEach(new Action1<Comment>() {
+
                     @Override
                     public void call(Comment comment) {
                         builder.addComment(comment);
@@ -142,23 +143,27 @@ public class StoriesStore {
         }
     }
 
-    private final class CommentMapper implements Func1<HackerNewsApi.Comment, Comment> {
+    private final class CommentMapper implements Func1<HackerNewsApi.Comment, Observable<Comment>> {
 
         @Override
-        public Comment call(HackerNewsApi.Comment comment) {
-            Comment.Builder builder =  new Comment.Builder()
+        public Observable<Comment> call(HackerNewsApi.Comment comment) {
+            List<Comment> comments = new ArrayList<>();
+            comments.add(transform(comment, 0));
+            if (comment.kids != null && !comment.kids.isEmpty()) {
+                HackerNewsApi.Comment reply = mApi.getComment(comment.kids.get(0));
+                comments.add(transform(reply, 1));
+            }
+            return Observable.from(comments);
+        }
+
+        private Comment transform(HackerNewsApi.Comment comment, int level) {
+            return new Comment.Builder()
                     .setId(comment.id)
                     .setText(comment.text)
-                    .setAuthor(comment.by);
-            if (!comment.kids.isEmpty()) {
-                HackerNewsApi.Comment reply = mApi.getComment(comment.kids.get(0));
-                Comment.Builder replyBuilder = new Comment.Builder()
-                        .setId(reply.id)
-                        .setText(reply.text)
-                        .setAuthor(reply.by);
-                builder.addReply(replyBuilder.build());
-            }
-            return builder.build();
+                    .setAuthor(comment.by)
+                    .setTime(new Date(comment.time * 1000))
+                    .setLevel(level)
+                    .build();
         }
     }
 }

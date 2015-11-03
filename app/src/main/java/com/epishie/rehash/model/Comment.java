@@ -16,21 +16,22 @@
 
 package com.epishie.rehash.model;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Date;
 
 public class Comment {
 
     private final int mId;
     private final String mText;
     private final String mAuthor;
-    private final List<Comment> mReplies;
+    private final Date mTime;
+    private final int mLevel;
 
-    public Comment(int id, String text, String author, List<Comment> replies) {
+    public Comment(int id, String text, String author, Date time, int level)  {
         mId = id;
         mText = text;
         mAuthor = author;
-        mReplies = replies;
+        mTime = time;
+        mLevel = level;
     }
 
     public int getId() {
@@ -45,18 +46,23 @@ public class Comment {
         return mAuthor;
     }
 
-    public List<Comment> getReplies() {
-        return mReplies;
+    public Date getTime() {
+        return mTime;
+    }
+
+    public int getLevel() {
+        return mLevel;
     }
 
     public static class Builder {
         private int mId;
         private String mText = "";
         private String mAuthor = "";
-        private List<Comment> mReplies = new ArrayList<>();
+        private Date mTime = new Date();
+        private int mLevel = 0;
 
         public Comment build() {
-            return new Comment(mId, mText, mAuthor, mReplies);
+            return new Comment(mId, mText, mAuthor, mTime, mLevel);
         }
 
         public Builder setId(int id) {
@@ -65,17 +71,28 @@ public class Comment {
         }
 
         public Builder setText(String text) {
-            mText = text;
+            if (text != null) {
+                mText = text;
+            }
             return this;
         }
 
         public Builder setAuthor(String author) {
-            mAuthor = author;
+            if (author != null) {
+                mAuthor = author;
+            }
             return this;
         }
 
-        public Builder addReply(Comment reply) {
-            mReplies.add(reply);
+        public Builder setTime(Date time) {
+            if (time != null) {
+                mTime = time;
+            }
+            return this;
+        }
+
+        public Builder setLevel(int level) {
+            mLevel = level;
             return this;
         }
     }

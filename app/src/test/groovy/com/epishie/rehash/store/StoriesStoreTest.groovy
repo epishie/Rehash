@@ -185,11 +185,16 @@ class StoriesStoreTest extends Specification {
         outputStory.get() != null
         outputStory.get().id == 1
         outputStory.get().title == "Test"
-        outputStory.get().comments.size() == 5
+        outputStory.get().comments.size() == 10 // Each comment has 1 reply 5 * 2
         (1..5).eachWithIndex { Integer id, i ->
-            Comment comment = outputStory.get().comments[i]
+            Comment comment = outputStory.get().comments[i * 2]
             assert comment.id == id
             assert comment.text == "Comment #" + id
+            assert comment.level == 0
+            Comment reply = outputStory.get().comments[i * 2 + 1]
+            assert reply.id == 1000 * id + 1
+            assert reply.text == "Comment #" + reply.id
+            assert reply.level == 1
         }
     }
 
@@ -199,7 +204,7 @@ class StoriesStoreTest extends Specification {
         testStory.id = 1
         testStory.title = "Test"
         testStory.kids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-        apiHasStory testStory
+        apiHasStory testStory // Each comment has a reply
         def _ = new StoriesStore(actionBus, dataBus, scheduler, api)
         AtomicReference<Story> outputStory = new AtomicReference<>()
         dataBus.events(Story)
@@ -220,47 +225,16 @@ class StoriesStoreTest extends Specification {
         outputStory.get() != null
         outputStory.get().id == 1
         outputStory.get().title == "Test"
-        outputStory.get().comments.size() == 10
+        outputStory.get().comments.size() == 20 // Each comment has 1 reply 5 * 2
         (1..10).eachWithIndex { Integer id, i ->
-            Comment comment = outputStory.get().comments[i]
+            Comment comment = outputStory.get().comments[i * 2]
             assert comment.id == id
             assert comment.text == "Comment #" + id
-        }
-    }
-
-    def "on OpenStoryAction - emit Story, limits 1 reply per comment"() {
-        given:
-        def testStory = new HackerNewsApi.Story()
-        testStory.id = 1
-        testStory.title = "Test"
-        testStory.kids = [1, 2, 3]
-        apiHasStory testStory
-        def _ = new StoriesStore(actionBus, dataBus, scheduler, api)
-        AtomicReference<Story> outputStory = new AtomicReference<>()
-        dataBus.events(Story)
-                .observeOn(scheduler)
-                .subscribe(new Action1<Story>() {
-
-            @Override
-            void call(Story story) {
-                outputStory.set(story)
-            }
-        });
-
-        when:
-        actionBus.post(new OpenStoryAction(1))
-        scheduler.advanceTimeBy(5, TimeUnit.SECONDS)
-
-        then:
-        outputStory.get() != null
-        outputStory.get().id == 1
-        outputStory.get().title == "Test"
-        outputStory.get().comments.size() == 3
-        (1..3).eachWithIndex { Integer id, i ->
-            Comment comment = outputStory.get().comments[i]
-            assert comment.id == id
-            assert comment.text == "Comment #" + id
-            assert comment.replies.size() <= 1
+            assert comment.level == 0
+            Comment reply = outputStory.get().comments[i * 2 + 1]
+            assert reply.id == 1000 * id + 1
+            assert reply.text == "Comment #" + reply.id
+            assert reply.level == 1
         }
     }
 
