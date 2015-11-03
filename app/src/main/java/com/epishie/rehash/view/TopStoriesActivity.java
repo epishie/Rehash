@@ -98,7 +98,7 @@ public class TopStoriesActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     mRetainFragment.mIsRefreshing.set(true);
-                    mRefresher.setRefreshing(true);
+                    mRefresher.setRefreshing(true); // TODO: Issue on espresso if SwipeRefreshLayout is refreshing on load
                 }
             });
         }

@@ -103,7 +103,7 @@ public class StoryDetailActivity extends AppCompatActivity {
         }
         if (!relaunched || mRetainFragment.mIsLoading.get()) {
             mRetainFragment.mIsLoading.set(true);
-            mProgressDialog = ProgressDialog.show(this, "", "Loading", true);
+            mProgressDialog = ProgressDialog.show(this, "", "Loading", true); // TODO: Issue on espresso if ProgressDialog is displayed on load
             mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         }
     }
