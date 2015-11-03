@@ -18,6 +18,34 @@ package com.epishie.rehash;
 
 import android.app.Application;
 
-public class Rehash extends Application {
+import com.epishie.rehash.di.AppComponent;
+import com.epishie.rehash.di.DaggerAppComponent;
+import com.epishie.rehash.di.HasComponent;
+import com.epishie.rehash.store.StoriesStore;
 
+import javax.inject.Inject;
+
+public class Rehash extends Application implements HasComponent<AppComponent> {
+
+    private AppComponent mComponent;
+    @Inject
+    protected StoriesStore mStoriesStore;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        // SETUP DI
+        mComponent = DaggerAppComponent.create();
+        mComponent.injectApplication(this);
+    }
+
+    @Override
+    public AppComponent getComponent() {
+        return mComponent;
+    }
+
+    public void setComponent(AppComponent component) {
+        mComponent = component;
+    }
 }
