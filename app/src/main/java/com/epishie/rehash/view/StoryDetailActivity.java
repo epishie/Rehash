@@ -149,6 +149,7 @@ public class StoryDetailActivity extends AppCompatActivity {
         // ACTION BAR
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("");
         }
     }
 

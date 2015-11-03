@@ -72,9 +72,6 @@ dependencies {
     // VIEW INJECTION
     compile 'com.jakewharton:butterknife:7.0.1'
 
-    // IMAGE LOADING
-    compile 'com.squareup.picasso:picasso:2.5.2'
-
     // JUNIT
     testCompile 'junit:junit:4.12'
 
