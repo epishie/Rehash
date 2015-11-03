@@ -15,6 +15,7 @@
   -->
 
 <resources>
+    <string name="app_short_name">Rehash</string>
     <string name="app_name">Rehash for Hacker News</string>
     <string name="lbl_by_line">%1$d points by %2$s %3$s</string>
     <string name="lbl_comment_by_line">by %1$s %2$s</string>
