@@ -29,4 +29,8 @@ public class ActionCreator {
     public void createGetStoriesAction(boolean refresh) {
         mActionBus.post(new GetStoriesAction(refresh));
     }
+
+    public void createOpenStoryAction(int id) {
+        mActionBus.post(new OpenStoryAction(id));
+    }
 }

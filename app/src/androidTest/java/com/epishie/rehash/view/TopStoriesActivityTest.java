@@ -33,13 +33,11 @@ import com.epishie.rehash.di.DaggerAppComponent;
 import com.epishie.rehash.model.Story;
 import com.epishie.rehash.model.StoryBundle;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -55,6 +53,7 @@ import static android.support.test.espresso.intent.Intents.intended;
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasComponent;
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasData;
+import static android.support.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 import static android.support.test.espresso.matcher.ViewMatchers.isDescendantOfA;
 import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static android.support.test.espresso.matcher.ViewMatchers.withContentDescription;
@@ -127,7 +126,9 @@ public class TopStoriesActivityTest {
     public void showsAuthor() {
         // GIVEN
         mActivityTestRule.launchActivity(new Intent());
-        Story story = new Story(1, "Title", "sample_author", 0, new Date(), "");
+        Story story = new Story.Builder()
+                .setAuthor("sample_author")
+                .build();
         mStories = new StoryBundle();
         mStories.add(story);
 
@@ -143,7 +144,9 @@ public class TopStoriesActivityTest {
     public void showsScore() {
         // GIVEN
         mActivityTestRule.launchActivity(new Intent());
-        Story story = new Story(1, "Title", "", 12, new Date(), "");
+        Story story = new Story.Builder()
+                .setScore(12)
+                .build();
         mStories = new StoryBundle();
         mStories.add(story);
 
@@ -163,7 +166,9 @@ public class TopStoriesActivityTest {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(new Date());
         calendar.add(Calendar.DAY_OF_MONTH, -5);
-        Story story = new Story(1, "Title", "", 0, calendar.getTime(), "");
+        Story story = new Story.Builder()
+                .setTime(calendar.getTime())
+                .build();
         mStories = new StoryBundle();
         mStories.add(story);
 
@@ -185,7 +190,9 @@ public class TopStoriesActivityTest {
 
         // GIVEN
         mActivityTestRule.launchActivity(new Intent());
-        Story story = new Story(1, "Title", "", 0, new Date(), "https://google.com");
+        Story story = new Story.Builder()
+                .setUrl("https://google.com")
+                .build();
         mStories = new StoryBundle();
         mStories.add(story);
         mActivityTestRule.getActivity().mDataBus.post(mStories);
@@ -208,7 +215,9 @@ public class TopStoriesActivityTest {
 
         // GIVEN
         mActivityTestRule.launchActivity(new Intent());
-        Story story = new Story(1, "Title", "", 0, new Date(), "https://google.com");
+        Story story = new Story.Builder()
+                .setId(1)
+                .build();
         mStories = new StoryBundle();
         mStories.add(story);
         mActivityTestRule.getActivity().mDataBus.post(mStories);
@@ -217,7 +226,8 @@ public class TopStoriesActivityTest {
         onView(withId("list")).perform(actionOnItemAtPosition(0, click()));
 
         // THEN
-        intended(hasComponent(StoryDetailActivity.class.getName()));
+        intended(allOf(hasComponent(StoryDetailActivity.class.getName()),
+                hasExtra(StoryDetailActivity.EXTRA_STORY_ID, 1)));
 
         // CLEANUP
         Intents.release();
@@ -227,7 +237,10 @@ public class TopStoriesActivityTest {
         mStories = new StoryBundle();
         for (int i = 0; i < 15; i++) {
             int id = i + 1;
-            Story story = new Story(id, "Story #" + id, "Author #" + id, 10, new Date(), "");
+            Story story = new Story.Builder()
+                    .setId(id)
+                    .setTitle("Story #" + id)
+                    .build();
             mStories.add(story);
         }
         dataBus.post(mStories);

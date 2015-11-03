@@ -17,8 +17,10 @@
 package com.epishie.rehash.store
 
 import com.epishie.rehash.action.GetStoriesAction
+import com.epishie.rehash.action.OpenStoryAction
 import com.epishie.rehash.api.HackerNewsApi
 import com.epishie.rehash.bus.RxEventBus
+import com.epishie.rehash.model.Comment
 import com.epishie.rehash.model.Story
 import com.epishie.rehash.model.StoryBundle
 import rx.functions.Action1
@@ -156,6 +158,126 @@ class StoriesStoreTest extends Specification {
         }
     }
 
+    def "on OpenStoryAction - emit Story"() {
+        given:
+        def testStory = new HackerNewsApi.Story()
+        testStory.id = 1
+        testStory.title = "Test"
+        testStory.kids = [1, 2, 3, 4, 5]
+        apiHasStory testStory
+        def _ = new StoriesStore(actionBus, dataBus, scheduler, api)
+        AtomicReference<Story> outputStory = new AtomicReference<>()
+        dataBus.events(Story)
+            .observeOn(scheduler)
+            .subscribe(new Action1<Story>() {
+
+                @Override
+                void call(Story story) {
+                    outputStory.set(story)
+                }
+        });
+
+        when:
+        actionBus.post(new OpenStoryAction(1))
+        scheduler.advanceTimeBy(5, TimeUnit.SECONDS)
+
+        then:
+        outputStory.get() != null
+        outputStory.get().id == 1
+        outputStory.get().title == "Test"
+        outputStory.get().comments.size() == 5
+        (1..5).eachWithIndex { Integer id, i ->
+            Comment comment = outputStory.get().comments[i]
+            assert comment.id == id
+            assert comment.text == "Comment #" + id
+        }
+    }
+
+    def "on OpenStoryAction - emit Story, limits latest 10 comments"() {
+        given:
+        def testStory = new HackerNewsApi.Story()
+        testStory.id = 1
+        testStory.title = "Test"
+        testStory.kids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        apiHasStory testStory
+        def _ = new StoriesStore(actionBus, dataBus, scheduler, api)
+        AtomicReference<Story> outputStory = new AtomicReference<>()
+        dataBus.events(Story)
+                .observeOn(scheduler)
+                .subscribe(new Action1<Story>() {
+
+            @Override
+            void call(Story story) {
+                outputStory.set(story)
+            }
+        });
+
+        when:
+        actionBus.post(new OpenStoryAction(1))
+        scheduler.advanceTimeBy(5, TimeUnit.SECONDS)
+
+        then:
+        outputStory.get() != null
+        outputStory.get().id == 1
+        outputStory.get().title == "Test"
+        outputStory.get().comments.size() == 10
+        (1..10).eachWithIndex { Integer id, i ->
+            Comment comment = outputStory.get().comments[i]
+            assert comment.id == id
+            assert comment.text == "Comment #" + id
+        }
+    }
+
+    def "on OpenStoryAction - emit Story, limits 1 reply per comment"() {
+        given:
+        def testStory = new HackerNewsApi.Story()
+        testStory.id = 1
+        testStory.title = "Test"
+        testStory.kids = [1, 2, 3]
+        apiHasStory testStory
+        def _ = new StoriesStore(actionBus, dataBus, scheduler, api)
+        AtomicReference<Story> outputStory = new AtomicReference<>()
+        dataBus.events(Story)
+                .observeOn(scheduler)
+                .subscribe(new Action1<Story>() {
+
+            @Override
+            void call(Story story) {
+                outputStory.set(story)
+            }
+        });
+
+        when:
+        actionBus.post(new OpenStoryAction(1))
+        scheduler.advanceTimeBy(5, TimeUnit.SECONDS)
+
+        then:
+        outputStory.get() != null
+        outputStory.get().id == 1
+        outputStory.get().title == "Test"
+        outputStory.get().comments.size() == 3
+        (1..3).eachWithIndex { Integer id, i ->
+            Comment comment = outputStory.get().comments[i]
+            assert comment.id == id
+            assert comment.text == "Comment #" + id
+            assert comment.replies.size() <= 1
+        }
+    }
+
+    def apiHasStory(HackerNewsApi.Story story) {
+        api.getStory(_ as Integer) >> story
+        api.getComment(_ as Integer) >> { Integer id ->
+            HackerNewsApi.Comment comment = new HackerNewsApi.Comment()
+            comment.id = id
+            comment.text = "Comment #" + id
+            if (id <= 1000) {
+                def prefix = id * 1000
+                comment.kids = [prefix + 1, prefix + 2]
+            }
+            return comment
+        }
+    }
+
     def apiHasStoriesOfCount(int count) {
         def stories = []
         (1..count).each {
@@ -165,7 +287,7 @@ class StoriesStoreTest extends Specification {
         api.getStory(_ as Integer) >> { Integer id ->
             HackerNewsApi.Story story = new HackerNewsApi.Story()
             story.id = id
-            story.title = "Story #" + id;
+            story.title = "Story #" + id
             return story
         }
     }

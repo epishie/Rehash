@@ -14,25 +14,17 @@
  * limitations under the License.
  */
 
-package com.epishie.rehash.di;
+package com.epishie.rehash.action;
 
-import com.epishie.rehash.Rehash;
-import com.epishie.rehash.bus.RxEventBus;
-import com.epishie.rehash.view.StoryDetailActivity;
-import com.epishie.rehash.view.TopStoriesActivity;
+public class OpenStoryAction {
 
-import javax.inject.Named;
-import javax.inject.Singleton;
+    private final int mId;
 
-import dagger.Component;
+    public OpenStoryAction(int id) {
+        mId = id;
+    }
 
-@Singleton
-@Component(modules = AppModule.class)
-public interface AppComponent {
-
-    void injectApplication(Rehash app);
-    void injectActivity(TopStoriesActivity activity);
-    void injectActivity(StoryDetailActivity activity);
-    @Named("action")
-    RxEventBus getActionBus();
+    public int getId() {
+        return mId;
+    }
 }

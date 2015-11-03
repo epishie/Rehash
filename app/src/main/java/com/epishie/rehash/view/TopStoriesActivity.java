@@ -23,7 +23,6 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 
 import com.epishie.rehash.R;
 import com.epishie.rehash.action.ActionCreator;
@@ -70,16 +69,24 @@ public class TopStoriesActivity extends AppCompatActivity {
         appComponentSource.getComponent().injectActivity(this);
 
         setupViews();
-        setupBuses();
+        setupBus();
 
-        mRefresher.post(new Runnable() {
+        /*mRefresher.post(new Runnable() {
 
             @Override
             public void run() {
                 mRefresher.setRefreshing(true);
             }
-        });
+        });*/
         mActionCreator.createGetStoriesAction(false);
+    }
+
+    @Override
+    protected void onDestroy() {
+        for (Subscription subscription : mSubscriptions) {
+            subscription.unsubscribe();
+        }
+        super.onDestroy();
     }
 
     private void setupViews() {
@@ -104,6 +111,7 @@ public class TopStoriesActivity extends AppCompatActivity {
             @Override
             public void onSelectStory(int id) {
                 Intent intent = new Intent(TopStoriesActivity.this, StoryDetailActivity.class);
+                intent.putExtra(StoryDetailActivity.EXTRA_STORY_ID, id);
                 startActivity(intent);
             }
 
@@ -126,7 +134,7 @@ public class TopStoriesActivity extends AppCompatActivity {
         });
     }
 
-    private void setupBuses() {
+    private void setupBus() {
         mSubscriptions = new ArrayList<>();
         Subscription storySubscription = mDataBus.events(StoryBundle.class)
                 .observeOn(AndroidSchedulers.mainThread())

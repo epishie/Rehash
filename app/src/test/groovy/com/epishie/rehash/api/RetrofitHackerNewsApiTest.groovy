@@ -53,7 +53,7 @@ class RetrofitHackerNewsApiTest extends Specification {
                 "  \"by\" : \"Sir_Cmpwn\",\n" +
                 "  \"descendants\" : 25,\n" +
                 "  \"id\" : 10486541,\n" +
-                "  \"kids\" : [ 10486604, 10486688, 10486596, 10486622, 10486677, 10486675, 10486690, 10486610, 10486648, 10486600, 10486636, 10486599, 10486611, 10486661, 10486652, 10486673, 10486631, 10486621, 10486624, 10486629 ],\n" +
+                "  \"kids\" : [ 10486604, 10486688, 10486596, 10486622, 10486629 ],\n" +
                 "  \"score\" : 87,\n" +
                 "  \"time\" : 1446389835,\n" +
                 "  \"title\" : \"Please don't use Slack for FOSS projects\",\n" +
@@ -73,6 +73,36 @@ class RetrofitHackerNewsApiTest extends Specification {
         story.by == "Sir_Cmpwn"
         story.score == 87
         story.time == 1446389835
+        story.kids.size() == 5
+        story.kids[0] == 10486604
+        story.kids[1] == 10486688
+        story.kids[2] == 10486596
+        story.kids[3] == 10486622
+        story.kids[4] == 10486629
+    }
+
+    def ""() {
+        given:
+        clientRespondsWith("{\n" +
+                "  \"by\" : \"munchor\",\n" +
+                "  \"id\" : 10486604,\n" +
+                "  \"parent\" : 10486541,\n" +
+                "  \"text\" : \"Completely agreed. I love Slack and it makes sense for a lot of things.\",\n" +
+                "  \"time\" : 1446391211,\n" +
+                "  \"type\" : \"comment\"\n" +
+                "}")
+
+        def api = new RetrofitHackerNewsApi(client)
+
+        when:
+        def comment = api.getComment(10486604)
+
+        then:
+        client.requests.size() == 1
+        client.requests[0].url == "https://hacker-news.firebaseio.com/v0/item/10486604.json"
+        comment.id == 10486604
+        comment.text == "Completely agreed. I love Slack and it makes sense for a lot of things."
+        comment.by == "munchor"
     }
 
     def clientRespondsWith(String response) {

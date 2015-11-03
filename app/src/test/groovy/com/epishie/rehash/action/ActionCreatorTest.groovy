@@ -33,4 +33,15 @@ class ActionCreatorTest extends Specification {
         then:
         1 * actionBus.post( { it.isRefresh() } as GetStoriesAction)
     }
+
+    def "createOpenStoryAction() puts correct action to bus"() {
+        given:
+        def actionCreator = new ActionCreator(actionBus)
+
+        when:
+        actionCreator.createOpenStoryAction(1)
+
+        then:
+        1 * actionBus.post( { it.id == 1 } as OpenStoryAction)
+    }
 }

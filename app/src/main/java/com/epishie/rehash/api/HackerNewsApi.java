@@ -22,6 +22,7 @@ public interface HackerNewsApi {
 
     List<Integer> getTopStories();
     Story getStory(int id);
+    Comment getComment(int id);
 
     class Story {
         public int id;
@@ -30,5 +31,14 @@ public interface HackerNewsApi {
         public int score;
         public long time;
         public String url;
+        public String text;
+        public List<Integer> kids;
+    }
+
+    class Comment {
+        public int id;
+        public String text;
+        public String by;
+        public List<Integer> kids;
     }
 }
