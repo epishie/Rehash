@@ -28,10 +28,10 @@ class ActionCreatorTest extends Specification {
         def actionCreator = new ActionCreator(actionBus)
 
         when:
-        actionCreator.createGetStoriesAction(true);
+        actionCreator.createGetStoriesAction(true, 5);
 
         then:
-        1 * actionBus.post( { it.isRefresh() } as GetStoriesAction)
+        1 * actionBus.post( { it.isRefresh() && it.getCount() == 5 } as GetStoriesAction)
     }
 
     def "createOpenStoryAction() puts correct action to bus"() {

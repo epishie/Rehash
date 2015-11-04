@@ -16,6 +16,7 @@
 
 package com.epishie.rehash.store
 
+import com.epishie.rehash.action.DataMarker
 import com.epishie.rehash.action.GetStoriesAction
 import com.epishie.rehash.action.OpenStoryAction
 import com.epishie.rehash.api.HackerNewsApi
@@ -28,6 +29,7 @@ import rx.schedulers.TestScheduler
 import spock.lang.Specification
 
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 class StoriesStoreTest extends Specification {
@@ -37,7 +39,7 @@ class StoriesStoreTest extends Specification {
     def scheduler = new TestScheduler()
     def api = Mock(HackerNewsApi)
 
-    def "on GetStoriesAction - emits Stories from api, 15 stories per call"() {
+    def "on GetStoriesAction - emits N Stories from api"() {
         given:
         apiHasStoriesOfCount 500
         def _ = new StoriesStore(actionBus, dataBus, scheduler, api)
@@ -53,15 +55,15 @@ class StoriesStoreTest extends Specification {
             })
 
         when:
-        actionBus.post(new GetStoriesAction(false))
+        actionBus.post(new GetStoriesAction(false, 10))
         scheduler.advanceTimeBy(5, TimeUnit.SECONDS)
 
         then:
         storyBundle.get() != null
-        storyBundle.get().size() == 15
+        storyBundle.get().size() == 10
         storyBundle.get().eachWithIndex { Story story, i ->
             assert story.id == i + 1
-            assert story.title == "Story #" + (i + 1)
+            assert story.title == "STORY_END #" + (i + 1)
         }
     }
 
@@ -81,16 +83,16 @@ class StoriesStoreTest extends Specification {
         })
 
         when:
-        actionBus.post(new GetStoriesAction(false))
-        actionBus.post(new GetStoriesAction(false))
+        actionBus.post(new GetStoriesAction(false, 5))
+        actionBus.post(new GetStoriesAction(false, 10))
         scheduler.advanceTimeBy(5, TimeUnit.SECONDS)
 
         then:
         storyBundle.get() != null
-        storyBundle.get().size() == 30
+        storyBundle.get().size() == 15
         storyBundle.get().eachWithIndex { Story story, i ->
             assert story.id == i + 1
-            assert story.title == "Story #" + (i + 1)
+            assert story.title == "STORY_END #" + (i + 1)
         }
     }
 
@@ -108,10 +110,21 @@ class StoriesStoreTest extends Specification {
                 storyBundle.get().addAll(stories)
             }
         })
+        AtomicBoolean endReceived = new AtomicBoolean()
+        dataBus.events(DataMarker)
+                .observeOn(scheduler)
+                .subscribe(new Action1<DataMarker>() {
+            @Override
+            void call(DataMarker dataMarker) {
+                if (dataMarker == DataMarker.STORY_END) {
+                    endReceived.set(true)
+                }
+            }
+        })
 
         when:
-        actionBus.post(new GetStoriesAction(false))
-        actionBus.post(new GetStoriesAction(false))
+        actionBus.post(new GetStoriesAction(false, 15))
+        actionBus.post(new GetStoriesAction(false, 10))
         scheduler.advanceTimeBy(5, TimeUnit.SECONDS)
 
         then:
@@ -119,8 +132,50 @@ class StoriesStoreTest extends Specification {
         storyBundle.get().size() == 20
         storyBundle.get().eachWithIndex { Story story, i ->
             assert story.id == i + 1
-            assert story.title == "Story #" + (i + 1)
+            assert story.title == "STORY_END #" + (i + 1)
         }
+        endReceived.get()
+    }
+
+    def "on GetStoriesAction - emits empty Stories when there is nothing to be fetched"() {
+        given:
+        apiHasStoriesOfCount 20
+        def _ = new StoriesStore(actionBus, dataBus, scheduler, api)
+        AtomicReference<StoryBundle> storyBundle = new AtomicReference<>(new StoryBundle())
+        dataBus.events(StoryBundle)
+                .observeOn(scheduler)
+                .subscribe(new Action1<StoryBundle>() {
+
+            @Override
+            void call(StoryBundle stories) {
+                storyBundle.get().addAll(stories)
+            }
+        })
+        AtomicBoolean endReceived = new AtomicBoolean()
+        dataBus.events(DataMarker)
+                .observeOn(scheduler)
+                .subscribe(new Action1<DataMarker>() {
+            @Override
+            void call(DataMarker dataMarker) {
+                if (dataMarker == DataMarker.STORY_END) {
+                    endReceived.set(true)
+                }
+            }
+        })
+
+        when:
+        actionBus.post(new GetStoriesAction(false, 20))
+        actionBus.post(new GetStoriesAction(false, 10))
+        scheduler.advanceTimeBy(5, TimeUnit.SECONDS)
+
+        then:
+        storyBundle.get() != null
+        storyBundle.get().size() == 20
+        storyBundle.get().eachWithIndex { Story story, i ->
+            assert story.id == i + 1
+            assert story.title == "STORY_END #" + (i + 1)
+        }
+        endReceived.get()
     }
 
     def "on GetStoriesAction - emits new Stories from api if refresh is true "() {
@@ -139,8 +194,8 @@ class StoriesStoreTest extends Specification {
         })
 
         when:
-        actionBus.post(new GetStoriesAction(false))
-        actionBus.post(new GetStoriesAction(true))
+        actionBus.post(new GetStoriesAction(false, 15))
+        actionBus.post(new GetStoriesAction(true, 15))
         scheduler.advanceTimeBy(5, TimeUnit.SECONDS)
 
         then:
@@ -149,12 +204,12 @@ class StoriesStoreTest extends Specification {
         (1..15).eachWithIndex { Integer id, i ->
             Story story = storyBundle.get().get(i)
             assert story.id == id
-            assert story.title == "Story #" + id
+            assert story.title == "STORY_END #" + id
         }
         (1..15).eachWithIndex { Integer id, i ->
             Story story = storyBundle.get().get(i + 15)
             assert story.id == id
-            assert story.title == "Story #" + id
+            assert story.title == "STORY_END #" + id
         }
     }
 
@@ -261,7 +316,7 @@ class StoriesStoreTest extends Specification {
         api.getStory(_ as Integer) >> { Integer id ->
             HackerNewsApi.Story story = new HackerNewsApi.Story()
             story.id = id
-            story.title = "Story #" + id
+            story.title = "STORY_END #" + id
             return story
         }
     }

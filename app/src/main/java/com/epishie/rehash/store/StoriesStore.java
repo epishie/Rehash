@@ -16,6 +16,7 @@
 
 package com.epishie.rehash.store;
 
+import com.epishie.rehash.action.DataMarker;
 import com.epishie.rehash.action.GetStoriesAction;
 import com.epishie.rehash.action.OpenStoryAction;
 import com.epishie.rehash.api.HackerNewsApi;
@@ -35,7 +36,6 @@ import rx.functions.Func1;
 
 public class StoriesStore {
 
-    private static final int PAGE_SIZE = 15;
     private static final int COMMENT_SIZE = 10;
 
     private final RxEventBus mActionBus;
@@ -43,7 +43,7 @@ public class StoriesStore {
     private final Scheduler mScheduler;
     private final HackerNewsApi mApi;
     private List<Integer> mStoryIds;
-    private int mPage;
+    private int mCurrentIndex;
 
     public StoriesStore(RxEventBus actionBus, RxEventBus dataBus, Scheduler scheduler, HackerNewsApi api) {
         mActionBus = actionBus;
@@ -63,14 +63,15 @@ public class StoriesStore {
                     public void call(GetStoriesAction getStoriesAction) {
                         if (mStoryIds == null || getStoriesAction.isRefresh()) {
                             mStoryIds = mApi.getTopStories();
-                            mPage = 0;
+                            mCurrentIndex = 0;
                         }
-                        int start = mPage++ * PAGE_SIZE;
-                        if (start >= mStoryIds.size()) {
+                        if (mCurrentIndex >= mStoryIds.size()) {
+                            mDataBus.post(DataMarker.STORY_END);
                             return;
                         }
-                        int end = Math.min(start + PAGE_SIZE, mStoryIds.size());
-                        List<Integer> storyIds = mStoryIds.subList(start, end);
+                        int end = Math.min(mCurrentIndex + getStoriesAction.getCount(), mStoryIds.size());
+                        List<Integer> storyIds = mStoryIds.subList(mCurrentIndex, end);
+                        mCurrentIndex = end;
                         final StoryBundle stories = new StoryBundle();
                         Observable.from(storyIds).map(new Func1<Integer, HackerNewsApi.Story>() {
 
@@ -86,6 +87,9 @@ public class StoriesStore {
                             }
                         });
                         mDataBus.post(stories);
+                        if (mCurrentIndex == mStoryIds.size()) {
+                            mDataBus.post(DataMarker.STORY_END);
+                        }
                     }
                 });
     }

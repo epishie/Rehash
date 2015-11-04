@@ -25,11 +25,13 @@ import android.support.test.rule.ActivityTestRule;
 import android.text.format.DateUtils;
 
 import com.epishie.rehash.Rehash;
+import com.epishie.rehash.action.DataMarker;
 import com.epishie.rehash.action.GetStoriesAction;
 import com.epishie.rehash.bus.RxEventBus;
 import com.epishie.rehash.di.AppComponent;
 import com.epishie.rehash.di.AppModule;
 import com.epishie.rehash.di.DaggerAppComponent;
+import com.epishie.rehash.event.RxReplayEventBus;
 import com.epishie.rehash.model.Story;
 import com.epishie.rehash.model.StoryBundle;
 
@@ -67,6 +69,7 @@ public class TopStoriesActivityTest {
 
     private StoryBundle mStories;
     private RxEventBus mActionBus;
+    private RxEventBus mDataBus;
 
     @Rule
     public ActivityTestRule<TopStoriesActivity> mActivityTestRule = new ActivityTestRule<>(
@@ -76,11 +79,12 @@ public class TopStoriesActivityTest {
 
     @Before
     public void setUp() {
-        mActionBus = new RxEventBus();
+        mActionBus = new RxReplayEventBus();
+        mDataBus = new RxReplayEventBus();
         Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
         Rehash app = (Rehash) instrumentation.getTargetContext().getApplicationContext();
         AppComponent component = DaggerAppComponent.builder()
-                .appModule(new TestAppModule(mActionBus))
+                .appModule(new TestAppModule(mActionBus, mDataBus))
                 .build();
         app.setComponent(component);
     }
@@ -108,16 +112,15 @@ public class TopStoriesActivityTest {
     @Test
     public void showsStoriesFromDataBus() {
         // GIVEN
-        mActivityTestRule.launchActivity(new Intent());
-        mActivityTestRule.getActivity().mRefresher.setRefreshing(false);
+        dataBusHasMultipleStories();
 
         // WHEN
-        dataBusHasStories(mActivityTestRule.getActivity().mDataBus);
+        mActivityTestRule.launchActivity(new Intent());
 
         // THEN
         onView(withId("list")).check(matches(isDisplayed()));
-        int i = 0;
-        for (Story story : mStories) {
+        for (int i = 0; i < 5; i++) {
+            Story story = mStories.get(i);
             onView(withId("list")).perform(scrollToPosition(i++));
             onView(allOf(isDescendantOfA(withId("list")), withText(story.getTitle())))
                     .check(matches(isDisplayed()));
@@ -127,15 +130,15 @@ public class TopStoriesActivityTest {
     @Test
     public void showsAuthor() {
         // GIVEN
-        mActivityTestRule.launchActivity(new Intent());
         Story story = new Story.Builder()
                 .setAuthor("sample_author")
                 .build();
         mStories = new StoryBundle();
         mStories.add(story);
+        dataBusHasStory(story);
 
         // WHEN
-        mActivityTestRule.getActivity().mDataBus.post(mStories);
+        mActivityTestRule.launchActivity(new Intent());
 
         // THEN
         onView(allOf(isDescendantOfA(withId("list")), withText(containsString(story.getAuthor()))))
@@ -145,15 +148,15 @@ public class TopStoriesActivityTest {
     @Test
     public void showsScore() {
         // GIVEN
-        mActivityTestRule.launchActivity(new Intent());
         Story story = new Story.Builder()
                 .setScore(12)
                 .build();
         mStories = new StoryBundle();
         mStories.add(story);
+        dataBusHasStory(story);
 
         // WHEN
-        mActivityTestRule.getActivity().mDataBus.post(mStories);
+        mActivityTestRule.launchActivity(new Intent());
 
         // THEN
         onView(allOf(isDescendantOfA(withId("list")), withText(containsString(String.valueOf(story.getScore())))))
@@ -163,7 +166,6 @@ public class TopStoriesActivityTest {
     @Test
     public void showsAge() {
         // GIVEN
-        mActivityTestRule.launchActivity(new Intent());
         Date now = new Date();
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(new Date());
@@ -173,9 +175,10 @@ public class TopStoriesActivityTest {
                 .build();
         mStories = new StoryBundle();
         mStories.add(story);
+        dataBusHasStory(story);
 
         // WHEN
-        mActivityTestRule.getActivity().mDataBus.post(mStories);
+        mActivityTestRule.launchActivity(new Intent());
 
         // THEN
         CharSequence age = DateUtils.getRelativeTimeSpanString(calendar.getTime().getTime(),
@@ -191,13 +194,13 @@ public class TopStoriesActivityTest {
         Intents.init();
 
         // GIVEN
-        mActivityTestRule.launchActivity(new Intent());
         Story story = new Story.Builder()
                 .setUrl("https://google.com")
                 .build();
         mStories = new StoryBundle();
         mStories.add(story);
-        mActivityTestRule.getActivity().mDataBus.post(mStories);
+        dataBusHasStory(story);
+        mActivityTestRule.launchActivity(new Intent());
 
         // WHEN
         onView(withId("url")).perform(click());
@@ -216,13 +219,13 @@ public class TopStoriesActivityTest {
         Intents.init();
 
         // GIVEN
-        mActivityTestRule.launchActivity(new Intent());
         Story story = new Story.Builder()
                 .setId(1)
                 .build();
         mStories = new StoryBundle();
         mStories.add(story);
-        mActivityTestRule.getActivity().mDataBus.post(mStories);
+        dataBusHasStory(story);
+        mActivityTestRule.launchActivity(new Intent());
 
         // WHEN
         onView(withId("list")).perform(actionOnItemAtPosition(0, click()));
@@ -235,30 +238,46 @@ public class TopStoriesActivityTest {
         Intents.release();
     }
 
-    private void dataBusHasStories(RxEventBus dataBus) {
+    private void dataBusHasStory(Story story) {
+        StoryBundle stories = new StoryBundle();
+        stories.add(story);
+        mDataBus.post(stories);
+        mDataBus.post(DataMarker.STORY_END);
+    }
+
+    private void dataBusHasMultipleStories() {
         mStories = new StoryBundle();
         for (int i = 0; i < 15; i++) {
             int id = i + 1;
             Story story = new Story.Builder()
                     .setId(id)
-                    .setTitle("Story #" + id)
+                    .setTitle("STORY_END #" + id)
                     .setUrl("http://www.google.com")
                     .build();
             mStories.add(story);
         }
-        dataBus.post(mStories);
+        mDataBus.post(mStories);
+        mDataBus.post(DataMarker.STORY_END);
     }
 
     private static class TestAppModule extends AppModule {
         private final RxEventBus mActionBus;
+        private final RxEventBus mDataBus;
 
-        private TestAppModule(RxEventBus actionBus) {
+        private TestAppModule(RxEventBus actionBus, RxEventBus dataBus) {
             mActionBus = actionBus;
+            mDataBus = dataBus;
         }
 
         @Override
         public RxEventBus provideActionBus() {
             return mActionBus;
         }
+
+        @Override
+        public RxEventBus provideDataBus() {
+            return mDataBus;
+        }
     }
+
 }

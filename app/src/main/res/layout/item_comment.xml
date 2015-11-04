@@ -26,9 +26,8 @@
     android:paddingLeft="@dimen/keyline_1">
     <View
         android:id="@+id/marker"
-        android:layout_width="@dimen/keyline_1"
-        android:layout_height="wrap_content"
-        android:visibility="gone"/>
+        android:layout_width="0dp"
+        android:layout_height="wrap_content" />
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

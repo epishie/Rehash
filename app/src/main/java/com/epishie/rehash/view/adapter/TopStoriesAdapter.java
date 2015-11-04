@@ -25,17 +25,14 @@ import android.text.style.UnderlineSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.epishie.rehash.R;
-import com.epishie.rehash.action.ActionCreator;
 import com.epishie.rehash.model.Story;
-import com.epishie.rehash.model.StoryBundle;
 
-import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import butterknife.Bind;
 
@@ -46,11 +43,13 @@ public class TopStoriesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     private static final int STORY_ITEM = 0;
     private static final int MORE_ITEM = 1;
 
-    private final StoryBundle mStories;
+    private final List<Story> mStories;
     private Listener mListener;
+    private boolean mDataEnded;
 
     public TopStoriesAdapter() {
-        mStories = new StoryBundle();
+        mStories = new ArrayList<>();
+        mStories.add(null);
         mListener = null;
     }
 
@@ -71,19 +70,6 @@ public class TopStoriesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
         if (getItemViewType(position) == MORE_ITEM) {
-            final LoadMoreViewHolder viewHolder = (LoadMoreViewHolder) holder;
-            viewHolder.mMoreButton.setVisibility(View.VISIBLE);
-            viewHolder.mMoreButton.setOnClickListener(new View.OnClickListener() {
-
-                @Override
-                public void onClick(View view) {
-                    if (mListener != null) {
-                        mListener.onRequestMoreStories();
-                        viewHolder.mMoreButton.setVisibility(View.GONE);
-                    }
-                }
-            });
-
             return;
         }
 
@@ -132,26 +118,49 @@ public class TopStoriesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                 }
             }
         });
+
+        if (!mDataEnded && position == (getItemCount() - 1)) {
+            mListener.onRequestMoreStories();
+            viewHolder.itemView.post(new Runnable() {
+                @Override
+                public void run() {
+                    mStories.add(null);
+                    notifyItemInserted(mStories.size() - 1);
+                }
+            });
+        }
     }
 
     @Override
     public int getItemViewType(int position) {
-        if (position == mStories.size()) {
-            return MORE_ITEM;
-        }
-        return STORY_ITEM;
+        return (mStories.get(position) == null) ? MORE_ITEM : STORY_ITEM;
     }
 
     @Override
     public int getItemCount() {
-        if (mStories.size() == 0) {
-            return mStories.size();
-        }
-        return mStories.size() + 1;
+        return mStories.size();
     }
 
-    public void addStories(StoryBundle stories) {
+    public void setDataEnded(boolean dataEnded) {
+        mDataEnded = dataEnded;
+        if (!mStories.isEmpty() && mStories.get(mStories.size() - 1) == null) {
+            mStories.remove(mStories.size() - 1);
+            notifyItemRemoved(mStories.size() - 1);
+        }
+    }
+
+    public void addStories(List<Story> stories) {
+        if (!mStories.isEmpty() && mStories.get(mStories.size() - 1) == null) {
+            mStories.remove(mStories.size() - 1);
+        }
         mStories.addAll(stories);
+        notifyDataSetChanged();
+    }
+
+    public void refreshStories(List<Story> stories) {
+        mStories.clear();
+        mStories.addAll(stories);
+        mDataEnded = false;
         notifyDataSetChanged();
     }
 
@@ -177,9 +186,6 @@ public class TopStoriesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     }
 
     public static class LoadMoreViewHolder extends RecyclerView.ViewHolder {
-
-        @Bind(R.id.more)
-        protected Button mMoreButton;
 
         public LoadMoreViewHolder(View itemView) {
             super(itemView);

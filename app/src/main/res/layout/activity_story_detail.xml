@@ -15,33 +15,39 @@
   ~ limitations under the License.
   -->
 
-<LinearLayout
+<android.support.design.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-    <android.support.v7.widget.CardView
-        android:id="@+id/card"
+    <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:cardUseCompatPadding="true"
-        android:visibility="gone">
-        <LinearLayout
+        android:layout_height="wrap_content">
+        <android.support.design.widget.CollapsingToolbarLayout
+            android:id="@+id/collapsing_container"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="@dimen/keyline_1">
-            <TextView
-                android:id="@+id/story_text"
+            android:layout_height="match_parent"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed">
+            <android.support.v7.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_height="?attr/actionBarSize"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:maxLines="4"
-                tools:text="This is a sample content of a story. This may span multiple lines with a max of 4 lines"/>
-        </LinearLayout>
-    </android.support.v7.widget.CardView>
+                android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+                app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+                app:layout_collapseMode="pin" />
+        </android.support.design.widget.CollapsingToolbarLayout>
+        <View
+            android:id="@+id/spacer"
+            android:layout_width="match_parent"
+            android:layout_height="64dp" />
+    </android.support.design.widget.AppBarLayout>
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/comment_list"
+        android:id="@+id/list"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-</LinearLayout>
+        android:layout_height="match_parent"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        app:behavior_overlapTop="56dp" />
+</android.support.design.widget.CoordinatorLayout>

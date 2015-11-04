@@ -17,13 +17,15 @@
 
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="48dp">
-    <Button
-        android:id="@+id/more"
+    android:layout_height="wrap_content">
+    <com.wang.avi.AVLoadingIndicatorView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:text="@string/lbl_more"
-        style="?borderlessButtonStyle" />
+        android:visibility="visible"
+        android:layout_gravity="center"
+        app:indicator="BallPulse"
+        app:indicator_color="@color/colorAccent"
+    />
 </FrameLayout>

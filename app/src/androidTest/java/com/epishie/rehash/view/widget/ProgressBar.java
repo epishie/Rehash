@@ -14,23 +14,22 @@
  * limitations under the License.
  */
 
-package com.epishie.rehash.action;
+package com.epishie.rehash.view.widget;
 
-public class GetStoriesAction {
+import android.content.Context;
+import android.util.AttributeSet;
 
-    private final boolean mRefresh;
-    private final int mCount;
+public class ProgressBar extends android.widget.ProgressBar {
 
-    public GetStoriesAction(boolean refresh, int count) {
-        mRefresh = refresh;
-        mCount = count;
+    public ProgressBar(Context context) {
+        super(context);
     }
 
-    public boolean isRefresh() {
-        return mRefresh;
+    public ProgressBar(Context context, AttributeSet attrs) {
+        super(context, attrs);
     }
 
-    public int getCount() {
-        return mCount;
+    public ProgressBar(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
     }
 }

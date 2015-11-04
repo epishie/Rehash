@@ -14,23 +14,27 @@
  * limitations under the License.
  */
 
-package com.epishie.rehash.action;
+package com.epishie.rehash.event;
 
-public class GetStoriesAction {
+import com.epishie.rehash.bus.RxEventBus;
 
-    private final boolean mRefresh;
-    private final int mCount;
+import rx.Observable;
+import rx.subjects.ReplaySubject;
+import rx.subjects.SerializedSubject;
+import rx.subjects.Subject;
 
-    public GetStoriesAction(boolean refresh, int count) {
-        mRefresh = refresh;
-        mCount = count;
+public class RxReplayEventBus extends RxEventBus {
+    private final Subject<Object, Object> bus = new SerializedSubject<>(ReplaySubject.create());
+
+    public void post(Object o) {
+        bus.onNext(o);
     }
 
-    public boolean isRefresh() {
-        return mRefresh;
+    public <T> Observable<T> events(Class<T> klass) {
+        return events().ofType(klass);
     }
 
-    public int getCount() {
-        return mCount;
+    public Observable<Object> events() {
+        return bus.asObservable();
     }
 }

@@ -52,6 +52,11 @@ public class RetrofitHackerNewsApi implements HackerNewsApi {
         return mHackerNews.comment(id);
     }
 
+    @Override
+    public Item getItem(int id) {
+        return mHackerNews.item(id);
+    }
+
     public interface HackerNews {
 
         @GET("/v0/topstories.json")
@@ -62,5 +67,8 @@ public class RetrofitHackerNewsApi implements HackerNewsApi {
 
         @GET("/v0/item/{id}.json")
         Comment comment(@Path("id")int id);
+
+        @GET("/v0/item/{id}.json")
+        Item item(@Path("id")int id);
     }
 }

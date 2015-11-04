@@ -28,12 +28,12 @@ import android.support.v7.widget.RecyclerView;
 
 import com.epishie.rehash.R;
 import com.epishie.rehash.action.ActionCreator;
+import com.epishie.rehash.action.DataMarker;
 import com.epishie.rehash.bus.RxEventBus;
 import com.epishie.rehash.di.AppComponent;
 import com.epishie.rehash.di.HasComponent;
 import com.epishie.rehash.model.StoryBundle;
 import com.epishie.rehash.view.adapter.TopStoriesAdapter;
-import com.epishie.rehash.view.widget.DividerItemDecoration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,6 +52,7 @@ import static butterknife.ButterKnife.bind;
 public class TopStoriesActivity extends AppCompatActivity {
 
     private static final String TAG_RETAIN = "retain";
+    private static final int FETCH_COUNT = 5;
 
     @Named("data")
     @Inject
@@ -64,22 +65,22 @@ public class TopStoriesActivity extends AppCompatActivity {
     protected SwipeRefreshLayout mRefresher;
     private TopStoriesAdapter mAdapter;
     private List<Subscription> mSubscriptions;
-    private RetainFragment mRetainFragment;
+    private StateFragment mState;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         // SETUP RETENTION
-        boolean relaunched = true;
         FragmentManager fm = getSupportFragmentManager();
-        mRetainFragment = (RetainFragment) fm.findFragmentByTag(TAG_RETAIN);
-        if (mRetainFragment == null) {
-            relaunched = false;
-            mRetainFragment = new RetainFragment();
+        mState = (StateFragment) fm.findFragmentByTag(TAG_RETAIN);
+        if (mState == null) {
+            mState = new StateFragment();
             fm.beginTransaction()
-                    .add(mRetainFragment, TAG_RETAIN)
+                    .add(mState, TAG_RETAIN)
                     .commit();
+        } else {
+            mState.mIsRelaunched.set(true);
         }
 
         // SETUP DI
@@ -90,24 +91,24 @@ public class TopStoriesActivity extends AppCompatActivity {
         setupViews();
         setupBus();
 
-        if (!relaunched) {
-            mActionCreator.createGetStoriesAction(false);
+        if (!mState.mIsRelaunched.get()) {
+            mActionCreator.createGetStoriesAction(false, FETCH_COUNT);
         }
-        if (!relaunched || mRetainFragment.mIsRefreshing.get()) {
-            mRefresher.post(new Runnable() {
+        // Show refresh on
+        if (mState.mIsRefreshing.get()) {
+            mRefresher.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    mRetainFragment.mIsRefreshing.set(true);
-                    mRefresher.setRefreshing(true); // TODO: Issue on espresso if SwipeRefreshLayout is refreshing on load
+                    mRefresher.setRefreshing(true);
                 }
-            });
+            }, 10);
         }
     }
 
     @Override
     protected void onDestroy() {
         mAdapter.setListener(null);
-        mRetainFragment.mAdapter = mAdapter;
+        mState.mAdapter = mAdapter;
         for (Subscription subscription : mSubscriptions) {
             subscription.unsubscribe();
         }
@@ -121,7 +122,7 @@ public class TopStoriesActivity extends AppCompatActivity {
         // SETUP RECYCLER VIEW
         LinearLayoutManager lm = new LinearLayoutManager(this);
         lm.setOrientation(LinearLayoutManager.VERTICAL);
-        mAdapter = mRetainFragment.mAdapter;
+        mAdapter = mState.mAdapter;
         if (mAdapter == null) {
             mAdapter = new TopStoriesAdapter();
         }
@@ -133,9 +134,7 @@ public class TopStoriesActivity extends AppCompatActivity {
 
             @Override
             public void onRequestMoreStories() {
-                mActionCreator.createGetStoriesAction(false);
-                mRetainFragment.mIsRefreshing.set(true);
-                mRefresher.setRefreshing(true);
+                mActionCreator.createGetStoriesAction(false, FETCH_COUNT);
             }
 
             @Override
@@ -155,12 +154,13 @@ public class TopStoriesActivity extends AppCompatActivity {
         });
 
         // SETUP REFRESH LAYOUT
+        mRefresher.setColorSchemeResources(R.color.colorAccent);
         mRefresher.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
 
             @Override
             public void onRefresh() {
-                mRetainFragment.mIsRefreshing.set(true);
-                mActionCreator.createGetStoriesAction(true);
+                mState.mIsRefreshing.set(true);
+                mActionCreator.createGetStoriesAction(true, FETCH_COUNT);
             }
         });
     }
@@ -173,17 +173,36 @@ public class TopStoriesActivity extends AppCompatActivity {
 
                     @Override
                     public void call(StoryBundle stories) {
-                        mAdapter.addStories(stories);
-                        mRetainFragment.mIsRefreshing.set(false);
-                        mRefresher.setRefreshing(false);
+                        if (mState.mIsRefreshing.get()) {
+                            mState.mIsRefreshing.set(false);
+                            mRefresher.setRefreshing(false);
+                            mAdapter.refreshStories(stories);
+                        } else {
+                            mAdapter.addStories(stories);
+                        }
+                    }
+                });
+        Subscription storiesEndedSubscription = mDataBus.events(DataMarker.class)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Action1<DataMarker>() {
+
+                    @Override
+                    public void call(DataMarker dataMarker) {
+                        if (mState.mIsRefreshing.get()) {
+                            mState.mIsRefreshing.set(false);
+                            mRefresher.setRefreshing(false);
+                        }
+                        mAdapter.setDataEnded(true);
                     }
                 });
         mSubscriptions.add(storySubscription);
+        mSubscriptions.add(storiesEndedSubscription);
     }
 
-    public static class RetainFragment extends Fragment {
+    public static class StateFragment extends Fragment {
 
         public AtomicBoolean mIsRefreshing = new AtomicBoolean(false);
+        public AtomicBoolean mIsRelaunched = new AtomicBoolean(false);
         public TopStoriesAdapter mAdapter;
 
         @Override

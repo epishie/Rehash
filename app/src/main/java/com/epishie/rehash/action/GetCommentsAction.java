@@ -16,14 +16,20 @@
 
 package com.epishie.rehash.action;
 
-public class GetStoriesAction {
+public class GetCommentsAction {
 
+    private final int mStoryId;
     private final boolean mRefresh;
     private final int mCount;
 
-    public GetStoriesAction(boolean refresh, int count) {
+    public GetCommentsAction(int storyId, boolean refresh, int count) {
+        mStoryId = storyId;
         mRefresh = refresh;
         mCount = count;
+    }
+
+    public int getStoryId() {
+        return mStoryId;
     }
 
     public boolean isRefresh() {

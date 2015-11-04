@@ -16,21 +16,7 @@
 
 package com.epishie.rehash.action;
 
-public class GetStoriesAction {
-
-    private final boolean mRefresh;
-    private final int mCount;
-
-    public GetStoriesAction(boolean refresh, int count) {
-        mRefresh = refresh;
-        mCount = count;
-    }
-
-    public boolean isRefresh() {
-        return mRefresh;
-    }
-
-    public int getCount() {
-        return mCount;
-    }
+public enum DataMarker {
+    STORY_END,
+    COMMENTS_END
 }

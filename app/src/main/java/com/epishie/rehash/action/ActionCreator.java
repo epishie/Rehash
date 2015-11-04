@@ -26,11 +26,16 @@ public class ActionCreator {
         mActionBus = actionBus;
     }
 
-    public void createGetStoriesAction(boolean refresh) {
-        mActionBus.post(new GetStoriesAction(refresh));
+    public void createGetStoriesAction(boolean refresh, int count) {
+        mActionBus.post(new GetStoriesAction(refresh, count));
     }
 
     public void createOpenStoryAction(int id) {
         mActionBus.post(new OpenStoryAction(id));
+    }
+
+    public void createGetCommentsAction(int storyId, boolean refresh, int count) {
+        mActionBus.post(new GetCommentsAction(storyId, refresh, count));
+
     }
 }

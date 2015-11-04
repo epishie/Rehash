@@ -21,6 +21,7 @@ import android.app.Application;
 import com.epishie.rehash.di.AppComponent;
 import com.epishie.rehash.di.DaggerAppComponent;
 import com.epishie.rehash.di.HasComponent;
+import com.epishie.rehash.store.CommentsStore;
 import com.epishie.rehash.store.StoriesStore;
 
 import javax.inject.Inject;
@@ -30,6 +31,8 @@ public class Rehash extends Application implements HasComponent<AppComponent> {
     private AppComponent mComponent;
     @Inject
     protected StoriesStore mStoriesStore;
+    @Inject
+    protected CommentsStore mCommentsStore;
 
     @Override
     public void onCreate() {

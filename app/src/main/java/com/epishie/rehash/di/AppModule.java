@@ -22,6 +22,7 @@ import com.epishie.rehash.action.ActionCreator;
 import com.epishie.rehash.api.HackerNewsApi;
 import com.epishie.rehash.api.RetrofitHackerNewsApi;
 import com.epishie.rehash.bus.RxEventBus;
+import com.epishie.rehash.store.CommentsStore;
 import com.epishie.rehash.store.StoriesStore;
 
 import javax.inject.Named;
@@ -63,6 +64,14 @@ public class AppModule {
                                              @Named("data") RxEventBus dataBus,
                                              HackerNewsApi api) {
         return new StoriesStore(actionBus, dataBus, Schedulers.newThread(), api);
+    }
+
+    @Singleton
+    @Provides
+    public CommentsStore providedCommentsStore(@Named("action") RxEventBus actionBus,
+                                             @Named("data") RxEventBus dataBus,
+                                             HackerNewsApi api) {
+        return new CommentsStore(actionBus, dataBus, Schedulers.newThread(), api);
     }
 
     @Singleton

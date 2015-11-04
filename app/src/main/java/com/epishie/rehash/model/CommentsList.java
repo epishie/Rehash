@@ -14,23 +14,10 @@
  * limitations under the License.
  */
 
-package com.epishie.rehash.action;
+package com.epishie.rehash.model;
 
-public class GetStoriesAction {
+import java.util.ArrayList;
 
-    private final boolean mRefresh;
-    private final int mCount;
+public class CommentsList extends ArrayList<Comment> {
 
-    public GetStoriesAction(boolean refresh, int count) {
-        mRefresh = refresh;
-        mCount = count;
-    }
-
-    public boolean isRefresh() {
-        return mRefresh;
-    }
-
-    public int getCount() {
-        return mCount;
-    }
 }
