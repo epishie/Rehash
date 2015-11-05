@@ -46,6 +46,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     private static final int ITEM_COMMENT = 1;
     private static final int ITEM_MORE = 2;
     private static final int MARKER_WIDTH = 16; // DP
+    private static final int FETCH_OFFSET = 3;
 
     private final List<Comment> mComments;
     private final String mStoryText;
@@ -120,12 +121,12 @@ public class CommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 return;
         }
 
-        if (!mDataEnded && position == (getItemCount() - 1)) {
+        if (!mDataEnded && position <= (getItemCount() - FETCH_OFFSET) && mComments.get(getItemCount() - 1) != null) {
+            mComments.add(null);
             mListener.onRequestMoreComments();
             holder.itemView.post(new Runnable() {
                 @Override
                 public void run() {
-                    mComments.add(null);
                     notifyItemInserted(mComments.size() - 1);
                 }
             });

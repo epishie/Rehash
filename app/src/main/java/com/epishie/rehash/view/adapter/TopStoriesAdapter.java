@@ -42,6 +42,7 @@ public class TopStoriesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
 
     private static final int STORY_ITEM = 0;
     private static final int MORE_ITEM = 1;
+    private static final int FETCH_OFFSET = 3;
 
     private final List<Story> mStories;
     private Listener mListener;
@@ -119,12 +120,12 @@ public class TopStoriesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
             }
         });
 
-        if (!mDataEnded && position == (getItemCount() - 1)) {
+        if (!mDataEnded && position <= (getItemCount() - FETCH_OFFSET) && mStories.get(mStories.size() - 1) != null) {
+            mStories.add(null);
             mListener.onRequestMoreStories();
             viewHolder.itemView.post(new Runnable() {
                 @Override
                 public void run() {
-                    mStories.add(null);
                     notifyItemInserted(mStories.size() - 1);
                 }
             });
